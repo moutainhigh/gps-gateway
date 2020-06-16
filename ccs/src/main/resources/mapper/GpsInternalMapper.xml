@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zkkj.gps.gateway.ccs.mappper.GpsInternalMapper">
+    <update id="saveOriginalGpsInfo" parameterType="com.zkkj.gps.gateway.ccs.dto.dbDto.VehicleLocationHisDto">
+			replace INTO vehicle_location_his (
+				terminal_id,gps_time,rcv_time,
+				lon,lat,direction,
+				speed,gsm_signal,gps_signal,
+				fuel,mileage,car_state,
+				terminal_state,alarm_state,power,
+				pressure,anti_dismantle,`load`,
+				elevation,data_sources,ele_dispatch
+			)
+
+			VALUES
+				(
+					#{terminalId},#{gpsTime},#{rcvTime},
+					#{longitude},#{latitude},#{direction},
+					#{speed},#{gsmSignal},#{gsmSignal},
+					#{oilMass},#{mileage},#{carState},
+					#{terminalState},#{alarmState},#{power},
+					#{pressure},#{antiDismantle},#{loadSensorValue},
+					#{elevation},#{flag},#{eleDispatch}
+				);
+    </update>
+
+
+    <select id="getVehicleLocationCount" parameterType="string" resultType="int">
+			SELECT COUNT(0) FROM vehicle_location_last w WHERE w.terminal_id = #{terminalId}
+	</select>
+
+    <insert id="saveFilterGpsInfo" parameterType="com.zkkj.gps.gateway.ccs.dto.dbDto.VehicleLocationHisDto">
+		INSERT INTO vehicle_location_last
+			(terminal_id,gps_time,rcv_time,
+				lon,lat,direction,
+				speed,gsm_signal,gps_signal,
+				fuel,mileage,car_state,
+				terminal_state,alarm_state,power,
+				pressure,anti_dismantle,`load`,
+				elevation,data_sources,ele_dispatch)
+		VALUES
+		    (#{terminalId},#{gpsTime},#{rcvTime},
+            #{longitude},#{latitude},#{direction},
+            #{speed},#{gsmSignal},#{gsmSignal},
+            #{oilMass},#{mileage},#{carState},
+            #{terminalState},#{alarmState},#{power},
+            #{pressure},#{antiDismantle},#{loadSensorValue},
+            #{elevation},#{flag},#{eleDispatch});
+	</insert>
+
+    <update id="updateFilterGpsInfo" parameterType="com.zkkj.gps.gateway.ccs.dto.dbDto.VehicleLocationHisDto">
+
+        UPDATE vehicle_location_last
+        <set>
+            <if test="gpsTime != null">
+                gps_time = #{gpsTime},
+            </if>
+            <if test="rcvTime != null">
+                rcv_time = #{rcvTime},
+            </if>
+            <if test="longitude != null">
+                lon = #{longitude},
+            </if>
+            <if test="latitude != null">
+                lat = #{latitude},
+            </if>
+            <if test="direction != null">
+                direction = #{direction},
+            </if>
+            <if test="speed != null">
+                speed = #{speed},
+            </if>
+            <if test="gsmSignal != null">
+                gsm_signal = #{gsmSignal},
+            </if>
+            <if test="gpsSignal != null">
+                gps_signal = #{gpsSignal},
+            </if>
+            <if test="oilMass != null">
+                fuel = #{oilMass},
+            </if>
+            <if test="mileage != null">
+                mileage = #{mileage},
+            </if>
+            <if test="carState != null">
+                car_state = #{carState},
+            </if>
+            <if test="terminalState != null">
+                terminal_state = #{terminalState},
+            </if>
+            <if test="alarmState != null">
+                alarm_state = #{alarmState},
+            </if>
+            <if test="power != null">
+                power = #{power},
+            </if>
+            <if test="pressure != null">
+                pressure = #{pressure},
+            </if>
+            <if test="loadSensorValue != null">
+                `load` = #{loadSensorValue},
+            </if>
+            <if test="elevation != null">
+                elevation = #{elevation},
+            </if>
+            <if test="antiDismantle != null">
+                anti_dismantle = #{antiDismantle},
+            </if>
+            <if test="flag != null">
+                data_sources = #{flag},
+            </if>
+            <if test="eleDispatch != null">
+                ele_dispatch = #{eleDispatch},
+            </if>
+        </set>
+        WHERE terminal_id = #{terminalId}
+    </update>
+
+    <insert id="batchSaveOriginalGpsInfo" parameterType="list">
+        replace into vehicle_location_his(
+        terminal_id,gps_time,rcv_time,
+        lon,lat,direction,
+        speed,gsm_signal,gps_signal,
+        fuel,mileage,car_state,
+        terminal_state,alarm_state,power,
+        pressure,anti_dismantle,`load`,
+        elevation,data_sources,ele_dispatch) values
+        <foreach collection="list" item="vehicleLocationHisDto" separator=",">
+            (#{vehicleLocationHisDto.terminalId},#{vehicleLocationHisDto.gpsTime},#{vehicleLocationHisDto.rcvTime},
+            #{vehicleLocationHisDto.longitude},#{vehicleLocationHisDto.latitude},#{vehicleLocationHisDto.direction},
+            #{vehicleLocationHisDto.speed},#{vehicleLocationHisDto.gsmSignal},#{vehicleLocationHisDto.gsmSignal},
+            #{vehicleLocationHisDto.oilMass},#{vehicleLocationHisDto.mileage},#{vehicleLocationHisDto.carState},
+            #{vehicleLocationHisDto.terminalState},#{vehicleLocationHisDto.alarmState},#{vehicleLocationHisDto.power},
+            #{vehicleLocationHisDto.pressure},#{vehicleLocationHisDto.antiDismantle},#{vehicleLocationHisDto.loadSensorValue},
+            #{vehicleLocationHisDto.elevation},#{vehicleLocationHisDto.flag},#{vehicleLocationHisDto.eleDispatch})
+        </foreach>
+
+    </insert>
+
+    <!--批量新增测试-->
+    <insert id="batchInsertTest" parameterType="list">
+        INSERT INTO vehicle_location_last(
+        terminal_id,gps_time,rcv_time,
+        lon,lat,direction,
+        speed,gsm_signal,gps_signal,
+        fuel,mileage,car_state,
+        terminal_state,alarm_state,power,
+        pressure,anti_dismantle,`load`,
+        elevation,data_sources,ele_dispatch)
+        VALUES
+        <foreach collection="list" item="vehicleLocationHisDto" separator=",">
+            (#{vehicleLocationHisDto.terminalId}, #{vehicleLocationHisDto.gpsTime},#{vehicleLocationHisDto.rcvTime},
+            #{vehicleLocationHisDto.longitude}, #{vehicleLocationHisDto.latitude},#{vehicleLocationHisDto.direction},
+            #{vehicleLocationHisDto.speed}, #{vehicleLocationHisDto.gsmSignal},#{vehicleLocationHisDto.gpsSignal},
+            #{vehicleLocationHisDto.oilMass}, #{vehicleLocationHisDto.mileage},#{vehicleLocationHisDto.carState},
+            #{vehicleLocationHisDto.terminalState}, #{vehicleLocationHisDto.alarmState},#{vehicleLocationHisDto.power},
+            #{vehicleLocationHisDto.pressure},
+            #{vehicleLocationHisDto.antiDismantle},#{vehicleLocationHisDto.loadSensorValue},
+            #{vehicleLocationHisDto.elevation},#{vehicleLocationHisDto.flag},#{vehicleLocationHisDto.eleDispatch})
+        </foreach>
+    </insert>
+
+    <resultMap id="baseResultMap" type="com.zkkj.gps.gateway.ccs.dto.dbDto.VehicleLocationHisDto">
+        <id column="terminal_id" property="terminalId"/>
+        <result column="gps_time" property="gpsTime"/>
+        <result column="rcv_time" property="rcvTime"/>
+        <result column="lon" property="longitude"/>
+        <result column="lat" property="latitude"/>
+        <result column="direction" property="direction"/>
+        <result column="speed" property="speed"/>
+        <result column="gsm_signal" property="gsmSignal"/>
+        <result column="gps_signal" property="gpsSignal"/>
+        <result column="fuel" property="oilMass"/>
+        <result column="mileage" property="mileage"/>
+        <result column="car_state" property="carState"/>
+        <result column="terminal_state" property="terminalState"/>
+        <result column="alarm_state" property="alarmState"/>
+        <result column="power" property="power"/>
+        <result column="anti_dismantle" property="antiDismantle"/>
+        <result column="pressure" property="pressure"/>
+        <result column="`load`" property="loadSensorValue"/>
+        <result column="elevation" property="elevation"/>
+        <result column="data_sources" property="flag"/>
+        <result column="ele_dispatch" property="eleDispatch"/>
+    </resultMap>
+
+    <sql id="content_sql">
+        terminal_id, DATE_FORMAT(gps_time,'%Y-%m-%d %T') AS gps_time, DATE_FORMAT(rcv_time,'%Y-%m-%d %T') AS rcv_time,
+        lon, lat, direction,
+        speed, gsm_signal, gps_signal,
+        fuel, mileage, car_state,
+        terminal_state, alarm_state, power,
+        pressure,`load`,anti_dismantle,
+        elevation,data_sources,ele_dispatch
+    </sql>
+
+    <select id="getLatestPositionList" resultMap="baseResultMap">
+        SELECT
+        <include refid="content_sql"/>
+        FROM vehicle_location_last
+    </select>
+
+    <select id="getPositionByTerminalId" parameterType="String" resultMap="baseResultMap">
+        SELECT
+        <include refid="content_sql"/>
+        FROM vehicle_location_last where terminal_id = #{terminalId}
+    </select>
+</mapper>

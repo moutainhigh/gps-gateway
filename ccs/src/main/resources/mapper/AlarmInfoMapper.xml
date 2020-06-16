@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zkkj.gps.gateway.ccs.mappper.AlarmInfoMapper">
+
+    <insert id="saveAlarmInfo" parameterType="com.zkkj.gps.gateway.ccs.dto.dbDto.AlarmInfoDbDto">
+			INSERT INTO terminal_alarm_info (
+					id, alarm_group_id, res_type,
+					identity, corp_name, terminal_id,
+					car_num, alarm_time, longitude,
+					latitude, alarm_info, alarm_type,
+					remark, area_id, alarm_value,
+					config_value, alarm_create_time, app_key,
+					create_time, create_by,alarm_config_id,
+					dispatch_no, is_delivery_area
+				)
+				VALUES
+					(
+						#{id}, #{alarmGroupId}, #{resType},
+						#{identity}, #{corpName}, #{terminalId},
+						#{carNum}, #{alarmTime}, #{longitude},
+						#{latitude}, #{alarmInfo}, #{alarmType},
+						#{remark}, #{areaId}, #{alarmValue},
+						#{configValue}, #{alarmCreateTime}, #{appKey},
+						#{createTime}, #{createBy},#{alarmConfigId},
+						 #{dispatchNo}, #{isDeliveryArea}
+					);
+    </insert>
+
+    <resultMap id="baseAlarmInfoMap" type="com.zkkj.gps.gateway.ccs.dto.dbDto.AlarmInfoDbDto">
+        <id column="id" property="id"/>
+        <result column="alarm_group_id" property="alarmGroupId"/>
+        <result column="res_type" property="resType"/>
+        <result column="identity" property="identity"/>
+        <result column="corp_name" property="corpName"/>
+        <result column="terminal_id" property="terminalId"/>
+        <result column="car_num" property="carNum"/>
+        <result column="alarm_time" property="alarmTime"/>
+        <result column="longitude" property="longitude"/>
+        <result column="latitude" property="latitude"/>
+        <result column="alarm_info" property="alarmInfo"/>
+        <result column="alarm_type" property="alarmType"/>
+        <result column="remark" property="remark"/>
+        <result column="area_id" property="areaId"/>
+        <result column="alarm_value" property="alarmValue"/>
+        <result column="config_value" property="configValue"/>
+        <result column="alarm_create_time" property="alarmCreateTime"/>
+        <result column="app_key" property="appKey"/>
+        <result column="alarm_config_id" property="alarmConfigId"/>
+        <result column="dispatch_no" property="dispatchNo"/>
+        <result column="is_delivery_area" property="isDeliveryArea"/>
+    </resultMap>
+
+    <sql id="baseSql">
+        id, alarm_group_id, res_type,
+        identity, corp_name, terminal_id,
+        car_num, DATE_FORMAT(alarm_time,'%Y-%m-%d %T') alarm_time, longitude,
+        latitude, alarm_info, alarm_type,
+        remark, area_id, alarm_value,alarm_config_id,dispatch_no,
+        config_value,DATE_FORMAT(alarm_create_time,'%Y-%m-%d %T') alarm_create_time,
+        app_key, is_delivery_area
+    </sql>
+    <select id="getDisEndAlarmInfo" resultMap="baseAlarmInfoMap">
+        SELECT
+        <include refid="baseSql"/>
+        FROM terminal_alarm_info
+        WHERE res_type = 0
+        AND alarm_group_id NOT IN (SELECT u.alarm_group_id FROM terminal_alarm_info u WHERE u.res_type = 1)
+    </select>
+</mapper>

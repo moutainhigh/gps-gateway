@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zkkj.gps.gateway.ccs.mappper.PositionMapper">
+
+
+    <select id="getHistoryAlarmListInfo" resultType="com.zkkj.gps.gateway.ccs.dto.websocketDto.AlarmInfoSocket">
+        SELECT
+        app_key as appkey,
+        alarm_group_id AS alarmGroupId,
+        case res_type
+        when 0 then 'start'
+        when 1 then 'end'
+        End AS alarmResType,
+        `identity`,
+        corp_name AS corpName,
+        terminal_id AS terminalId,
+        car_num AS carNum,
+        DATE_FORMAT(alarm_time, '%Y-%m-%d %T') AS alarmTime,
+        longitude,
+        latitude,
+        dispatch_no AS dispatchNo,
+        alarm_info AS alarmInfo,
+        alarm_value AS alarmValue,
+        config_value AS configValue,
+        case alarm_type
+        when 1 then 'OFF_LINE'
+        when 2 then 'OVER_SPEED'
+        when 4 then 'STOP_OVER_TIME'
+        when 8 then 'VIOLATION_AREA'
+        when 16 then 'VEHICLE_LOAD'
+        when 32 then 'EQUIP_REMOVE'
+        when 64 then 'LINE_OFFSET'
+        when 128 then 'LOW_POWER'
+        when 2048 then 'EQUIP_EX'
+        End AS alarmType,
+        DATE_FORMAT(create_time, '%Y-%m-%d %T') AS alarmCreateTime,
+        remark
+        FROM terminal_alarm_info
+        <where>
+            <if test="terminalId != null and terminalId != ''">
+                AND terminal_id=#{terminalId}
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND create_time <![CDATA[>=]]> #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND create_time <![CDATA[<=]]> #{endTime}
+            </if>
+        </where>
+        ORDER BY create_time desc
+    </select>
+
+    <select id="getHistoryPositionByTerminalNo" resultType="com.zkkj.gps.gateway.ccs.dto.websocketDto.GPSPositionDto">
+        SELECT terminal_id AS simId,lon AS longitude,lat AS latitude, DATE_FORMAT(gps_time, '%Y-%m-%d %T') AS gpsTime,
+        DATE_FORMAT(rcv_time, '%Y-%m-%d %T') AS recTime, direction AS course,
+        speed,mileage AS milesKM,car_state AS carState,terminal_state AS terminalState,alarm_state AS alarmState,
+        power
+        FROM vehicle_location_his
+        <where>
+              terminal_id=#{terminalId}
+            <if test="startTime != null and startTime != ''">
+                AND gps_time <![CDATA[>=]]> #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND gps_time <![CDATA[<=]]> #{endTime}
+            </if>
+        </where>
+    </select>
+
+    <select id="getTrackByLicencePhoneNum" resultType="com.zkkj.gps.gateway.ccs.dto.websocketDto.GPSPositionDto">
+        SELECT terminal_id AS simId,lon AS longitude,lat AS latitude, DATE_FORMAT(gps_time, '%Y-%m-%d %T') AS gpsTime,
+        DATE_FORMAT(rcv_time, '%Y-%m-%d %T') AS recTime, direction AS course,
+        speed,mileage AS milesKM,car_state AS carState,terminal_state AS terminalState,alarm_state AS alarmState,
+        power
+        FROM vehicle_location_his
+        <where>
+            <if test="licensePlate != null and licensePlate != '' and phoneNum != null and phoneNum != ''">
+                AND (terminal_id=#{licensePlate} OR terminal_id=#{phoneNum})
+            </if>
+
+            <if test="licensePlate != null and licensePlate != '' and (phoneNum == null or phoneNum == '')">
+                AND terminal_id=#{licensePlate}
+            </if>
+
+            <if test="(licensePlate == null or licensePlate == '') and phoneNum != null and phoneNum != ''">
+                AND terminal_id=#{phoneNum}
+            </if>
+
+            <if test="startTime != null and startTime != ''">
+                AND gps_time <![CDATA[>=]]> #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND gps_time <![CDATA[<=]]> #{endTime}
+            </if>
+        </where>
+    </select>
+
+    <!--通过车牌号查询车辆历史轨迹-->
+    <select id="getTrackByLicencePlates" resultType="com.zkkj.gps.gateway.ccs.dto.websocketDto.GPSPositionDto">
+        SELECT terminal_id AS simId,lon AS longitude,lat AS latitude, DATE_FORMAT(gps_time, '%Y-%m-%d %T') AS gpsTime,
+        DATE_FORMAT(rcv_time, '%Y-%m-%d %T') AS recTime, direction AS course,
+        speed,mileage AS milesKM,car_state AS carState,terminal_state AS terminalState,alarm_state AS alarmState, power
+        FROM vehicle_location_his
+        <where>
+            <if test="licensePlate != null and licensePlate != ''">
+                AND terminal_id = #{licensePlate}
+            </if>
+
+            <if test="startTime != null and startTime != ''">
+                AND gps_time <![CDATA[>=]]> #{startTime}
+            </if>
+
+            <if test="endTime != null and endTime != ''">
+                AND gps_time <![CDATA[<=]]> #{endTime}
+            </if>
+        </where>
+
+    </select>
+
+
+</mapper>

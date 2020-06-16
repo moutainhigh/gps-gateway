@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zkkj.gps.gateway.ccs.mappper.AlarmConfigMapper">
+
+
+    <update id="updateAlarmConfigByDispatchNo" parameterType="com.zkkj.gps.gateway.ccs.dto.dbDto.UpdateAlarmConfigDto">
+        update terminal_alarm_config
+        set end_time = #{endTime}
+        where terminal_id = #{terminalNo} and dispatch_no = #{dispatchNo}
+    </update>
+
+    <update id="batchSaveAlarmConfig" parameterType="list">
+        replace INTO
+        terminal_alarm_config
+        (id, custom_config_id, app_key, alarm_type,
+        start_time, end_time, identity,
+        corp_name, terminal_id, create_time,
+        create_by,config_value,task_order,car_num, dispatch_no, is_delivery_area)
+        VALUES
+        <foreach collection="list" item="alarmConfigDbDto" separator=",">
+            (#{alarmConfigDbDto.id},
+            #{alarmConfigDbDto.customConfigId},#{alarmConfigDbDto.appKey},#{alarmConfigDbDto.alarmType},
+            #{alarmConfigDbDto.startTime},#{alarmConfigDbDto.endTime},#{alarmConfigDbDto.identity},
+            #{alarmConfigDbDto.corpName},#{alarmConfigDbDto.terminalId},#{alarmConfigDbDto.createTime},
+            #{alarmConfigDbDto.createBy},#{alarmConfigDbDto.configValue},#{alarmConfigDbDto.taskOrder},
+            #{alarmConfigDbDto.carNum},#{alarmConfigDbDto.dispatchNo}, #{alarmConfigDbDto.isDeliveryArea})
+        </foreach>
+    </update>
+
+    <update id="batchSaveArea" parameterType="list">
+        replace INTO
+        terminal_area
+        (id,custom_area_id, app_key, area_name,
+        address, center_lng, center_lat,
+        radius, area_points, graph_type,
+        alarm_config_id, create_time, create_by)
+        VALUES
+        <foreach collection="list" item="area" separator=",">
+            (#{area.id},#{area.customAreaId},#{area.appKey},#{area.areaName},
+            #{area.address},#{area.centerLng},#{area.centerLat},
+            #{area.radius},#{area.areaPoints},#{area.graphType},
+            #{area.alarmConfigId},#{area.createTime},#{area.createBy})
+        </foreach>
+    </update>
+
+    <update id="batchSaveRoute" parameterType="list">
+        replace INTO
+        terminal_route
+        (id, custom_route_id, route_name, width,
+        point_sequence, alarm_config_id, create_time,
+        create_by,app_key)
+        VALUES
+        <foreach collection="list" item="route" separator=",">
+            (#{route.id},#{route.customRouteId},#{route.routeName},#{route.width},
+            #{route.pointSequence},#{route.alarmConfigId},#{route.createTime},
+            #{route.createBy},#{route.appKey})
+        </foreach>
+    </update>
+
+
+    <sql id="commonSql">
+        app_key, custom_config_id, alarm_type, DATE_FORMAT(start_time,'%Y-%m-%d %T') start_time, DATE_FORMAT(end_time,'%Y-%m-%d %T') end_time, identity, corp_name, terminal_id, create_time, create_by,task_order,car_num,dispatch_no
+    </sql>
+
+
+    <delete id="deleteOriginArea">
+        delete a from terminal_area a
+        where a.app_key = #{appKey}
+        and a.alarm_config_id in
+        <foreach collection="areaList" item="item" open="(" separator="," close=")">
+            #{item.alarmConfigId}
+        </foreach>
+
+    </delete>
+
+    <delete id="deleteOriginRoute">
+        delete a from terminal_route a
+        where a.app_key = #{appKey}
+        and a.alarm_config_id in
+        <foreach collection="routeList" item="item" open="(" separator="," close=")">
+            #{item.alarmConfigId}
+        </foreach>
+    </delete>
+
+    <resultMap id="baseResult" type="com.zkkj.gps.gateway.ccs.dto.dbDto.AlarmConfigDbDto">
+        <id property="appKey" column="app_key"/>
+        <id property="customConfigId" column="custom_config_id"/>
+        <result column="config_value" property="configValue"/>
+        <result property="alarmType" column="alarm_type"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="identity" column="identity"/>
+        <result property="corpName" column="corp_name"/>
+        <result property="terminalId" column="terminal_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="taskOrder" column="task_order"/>
+        <result property="carNum" column="car_num"/>
+        <result property="dispatchNo" column="dispatch_no"/>
+        <result property="isDeliveryArea" column="is_delivery_area"/>
+    </resultMap>
+
+    <resultMap id="allAlarmConfig" type="com.zkkj.gps.gateway.ccs.dto.AlarmConfigCache" extends="baseResult">
+        <id property="appKey" column="app_key"/>
+        <id property="customConfigId" column="custom_config_id"/>
+        <id property="terminalId" column="terminal_id"/>
+        <association property="areaDbDto" resultMap="baseAreaMap"/>
+        <collection property="routeList" resultMap="baseRouteMap"/>
+    </resultMap>
+
+    <resultMap id="baseAreaMap" type="com.zkkj.gps.gateway.ccs.dto.dbDto.AreaDbDto">
+        <result column="custom_area_id" property="customAreaId"/>
+        <result column="area_name" property="areaName"/>
+        <result column="address" property="address"/>
+        <result column="center_lng" property="centerLng"/>
+        <result column="center_lat" property="centerLat"/>
+        <result column="radius" property="radius"/>
+        <result column="area_points" property="areaPoints"/>
+        <result column="graph_type" property="graphType"/>
+    </resultMap>
+
+    <resultMap id="baseRouteMap" type="com.zkkj.gps.gateway.ccs.dto.dbDto.RouteDbDto">
+        <result column="custom_route_id" property="customRouteId"/>
+        <result column="route_name" property="routeName"/>
+        <result column="width" property="width"/>
+        <result column="point_sequence" property="pointSequence"/>
+    </resultMap>
+
+    <select id="getAlarmConfigList" resultMap="allAlarmConfig" parameterType="com.zkkj.gps.gateway.ccs.dto.dispatch.BaseUpdateDispatchInfoDto">
+        SELECT c.custom_config_id, c.app_key, c.config_value, c.alarm_type,
+        DATE_FORMAT(c.start_time,'%Y-%m-%d %T') as start_time,
+        DATE_FORMAT(DATE_ADD(c.end_time,INTERVAL 3 DAY), '%Y-%m-%d %T') AS end_time,
+        c.identity,c.corp_name, c.terminal_id,c.car_num,c.dispatch_no,c.is_delivery_area,
+        a.custom_area_id,a.area_name,a.address,a.center_lng,a.center_lat, a.radius, a.area_points, a.graph_type,
+        r.custom_route_id, r.route_name, r.width, r.point_sequence
+        FROM terminal_alarm_config c
+        LEFT JOIN terminal_area a ON c.id = a.alarm_config_id
+        LEFT JOIN terminal_route r ON c.id = r.alarm_config_id
+        <where>
+            c.terminal_id = #{terminalNo} and c.dispatch_no = #{dispatchNo} and c.is_delivery_area = 1
+            <if test="appKey !=null and appKey != ''">
+                and c.app_key = #{appKey}
+            </if>
+        </where>
+    </select>
+
+    <select id="getAllAlarmConfigs" resultMap="allAlarmConfig">
+        SELECT c.custom_config_id, c.app_key, c.config_value, c.alarm_type, DATE_FORMAT(c.start_time,'%Y-%m-%d %T') as start_time,
+        DATE_FORMAT(c.end_time,'%Y-%m-%d %T')as end_time, c.identity,c.corp_name, c.terminal_id,c.car_num,c.dispatch_no,c.is_delivery_area,
+        a.custom_area_id,a.area_name,a.address,a.center_lng,a.center_lat, a.radius, a.area_points, a.graph_type,
+        r.custom_route_id, r.route_name, r.width, r.point_sequence
+        FROM terminal_alarm_config c
+        LEFT JOIN terminal_area a ON c.id = a.alarm_config_id
+        LEFT JOIN terminal_route r ON c.id = r.alarm_config_id
+        WHERE c.end_time <![CDATA[>= ]]> SYSDATE()
+    </select>
+
+    <select id="getAlarmConfig" resultMap="baseResult">
+        SELECT c.custom_config_id, c.app_key, c.config_value, c.alarm_type, DATE_FORMAT(c.start_time,'%Y-%m-%d %T') as start_time,
+        DATE_FORMAT(c.end_time,'%Y-%m-%d %T')as end_time,task_order,car_num,c.dispatch_no
+        FROM terminal_alarm_config c
+        WHERE c.app_key = #{appKey} AND c.custom_config_id = #{customConfigId}
+    </select>
+
+
+    <update id="updateAlarmConfigEndTime" parameterType="com.zkkj.gps.gateway.ccs.dto.dbDto.EndAlarmConfigDto">
+        update terminal_alarm_config
+        set end_time = #{endTime}
+        <where>
+            <if test="terminalId !=null and terminalId != ''">
+                and terminal_id = #{terminalId}
+            </if>
+            <if test="appKey !=null and appKey != ''">
+                and app_key = #{appKey}
+            </if>
+            <if test="customConfigId !=null and customConfigId != ''">
+                and custom_config_id = #{customConfigId}
+            </if>
+            <if test="disPatchNo !=null and disPatchNo != ''">
+                and dispatch_no = #{disPatchNo}
+            </if>
+        </where>
+    </update>
+
+
+    <update id="updateAlarmConfigEndTimeList">
+        UPDATE terminal_alarm_config
+        SET end_time = #{endAlarmConfigDto.endTime}
+        WHERE app_key = #{endAlarmConfigDto.appKey}
+        AND terminal_id = #{endAlarmConfigDto.terminalId}
+        AND custom_config_id
+        IN
+        <foreach collection="customConfigIdList" item="customConfigId" open="(" separator="," close=")">
+            #{customConfigId}
+        </foreach>
+    </update>
+
+    <update id="deleteAlarmConfig">
+        UPDATE terminal_alarm_config
+        SET end_time = #{endTime}
+        WHERE app_key = #{appKey}
+        AND terminal_id in
+        <foreach collection="terminalIdList" item="terminalId" open="(" separator="," close=")">
+            #{terminalId}
+        </foreach>
+        and dispatch_no is not null and dispatch_no != ''
+    </update>
+
+</mapper>

@@ -1,0 +1,139 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  labels:
+    component: gps-gateway
+  name: gps-gateway
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: gps-gateway
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: gps-gateway
+        component: gps-gateway
+    spec:
+      containers:
+      - name: ccs
+        image: ${ORIGIN_REPO}/${REPO}:${IMAGE_TAG}_ccs
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3002
+          name: ccs-socket
+          protocol: TCP
+        resources: {}
+        #volumeMounts:
+        #  - mountPath: 
+        #    name: 
+      - name: tcp-monitor
+        image: ${ORIGIN_REPO}/${REPO}:${IMAGE_TAG}_tcp-monitor
+        imagePullPolicy: Always
+        ports:
+        - name: gpstcpser
+          containerPort: 3010
+          protocol: TCP
+        - name: gps
+          containerPort: 3001
+          protocol: TCP
+        - name: gps-udp
+          containerPort: 3011
+          protocol: UDP
+        resources: {}
+        #volumeMounts:
+        #  - mountPath: 
+        #    name: 
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsUser: 0
+      serviceAccount: default
+      serviceAccountName: default
+      #volumes:
+      #  - name: 
+      #    nfs:
+      #      path: 
+      #      socket: 1a2d048266-gaa94.cn-beijing.nas.aliyuncs.com
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: gps-gateway
+    component: gps-gateway
+  name: gps-gateway
+  annotations:
+    service.beta.kubernetes.io/alicloud-loadbalancer-id: "lb-2zex6szu0uziofow82wdd"
+    service.beta.kubernetes.io/alicloud-loadbalancer-protocol-port: "tcp:3002,tcp:3010,tcp:3001"
+    service.beta.kubernetes.io/alicloud-loadbalancer-force-override-listeners: "true"
+    externalTrafficPolicy: "Local"
+spec:
+  ports:
+  - name: ccs-socket
+    port: 3002
+    protocol: TCP
+    targetPort: 3002
+  - name: gpstcpser
+    port: 3010
+    protocol: TCP
+    targetPort: 3010
+  - name: gps
+    port: 3001
+    protocol: TCP
+    targetPort: 3001
+  selector:
+    component: gps-gateway
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: gps-gateway
+    component: gps-gateway
+  name: gps-gateway-tcp
+  annotations:
+    service.beta.kubernetes.io/alicloud-loadbalancer-address-type: intranet
+    service.beta.kubernetes.io/alicloud-loadbalancer-id: "lb-2zembypghtqa3ahzq7we7"
+    service.beta.kubernetes.io/alicloud-loadbalancer-protocol-port: "tcp:3002"
+    service.beta.kubernetes.io/alicloud-loadbalancer-force-override-listeners: "true"
+    externalTrafficPolicy: "Local"
+spec:
+  ports:
+  - name: ccs-socket
+    port: 3002
+    protocol: TCP
+    targetPort: 3002
+  selector:
+    component: gps-gateway
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: gps-gateway
+    component: gps-gateway
+  name: gps-gateway-udp
+  annotations:
+    service.beta.kubernetes.io/alicloud-loadbalancer-address-type: intranet
+    service.beta.kubernetes.io/alicloud-loadbalancer-id: "lb-2zembypghtqa3ahzq7we7"
+    service.beta.kubernetes.io/alicloud-loadbalancer-protocol-port: "udp:3011"
+    service.beta.kubernetes.io/alicloud-loadbalancer-force-override-listeners: "true"
+    externalTrafficPolicy: "Local"
+spec:
+  ports:
+  - name: gps-udp
+    port: 3011
+    protocol: UDP
+    targetPort: 3011
+  selector:
+    component: gps-gateway
+  type: LoadBalancer

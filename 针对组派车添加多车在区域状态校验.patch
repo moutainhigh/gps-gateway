@@ -1,0 +1,160 @@
+Index: ccs/src/main/java/com/zkkj/gps/gateway/ccs/dto/gpsDto/TerminalAreaDto.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- ccs/src/main/java/com/zkkj/gps/gateway/ccs/dto/gpsDto/TerminalAreaDto.java	(revision ed9be368f08605737de23a6e6368877710f150e8)
++++ ccs/src/main/java/com/zkkj/gps/gateway/ccs/dto/gpsDto/TerminalAreaDto.java	(date 1587537609479)
+@@ -18,9 +18,9 @@
+ @ApiModel(value = "终端区域模型", description = "终端区域模型")
+ public class TerminalAreaDto {
+ 
+-    @ApiModelProperty(name = "terminalId", value = "终端id")
++    @ApiModelProperty(name = "terminalId", value = "终端id,如果传多个设备用,拼接起来例如：35001211，9846454,8764646")
+     @NotBlank(message = "终端编号不能为空")
+-    @Length(max = 16, message = "终端编号不能超过16位")
++//    @Length(max = 16, message = "终端编号不能超过16位")
+     private String terminalId;
+ 
+     @ApiModelProperty(name = "area", value = "区域模型")
+Index: ccs/src/main/java/com/zkkj/gps/gateway/ccs/controller/GpsInternalController.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- ccs/src/main/java/com/zkkj/gps/gateway/ccs/controller/GpsInternalController.java	(revision ed9be368f08605737de23a6e6368877710f150e8)
++++ ccs/src/main/java/com/zkkj/gps/gateway/ccs/controller/GpsInternalController.java	(date 1588147362956)
+@@ -1,9 +1,7 @@
+ package com.zkkj.gps.gateway.ccs.controller;
+ 
+ import com.zkkj.gps.gateway.ccs.dto.common.ResultVo;
+-import com.zkkj.gps.gateway.ccs.dto.gpsDto.InAreaDto;
+-import com.zkkj.gps.gateway.ccs.dto.gpsDto.InAreaPointsDto;
+-import com.zkkj.gps.gateway.ccs.dto.gpsDto.TerminalAreaDto;
++import com.zkkj.gps.gateway.ccs.dto.gpsDto.*;
+ import com.zkkj.gps.gateway.ccs.exception.ParamException;
+ import com.zkkj.gps.gateway.ccs.service.GpsInternalService;
+ import com.zkkj.gps.gateway.ccs.service.IGenerator;
+@@ -25,7 +23,10 @@
+ import org.springframework.web.bind.annotation.*;
+ 
+ import java.awt.geom.Point2D;
++import java.util.ArrayList;
++import java.util.HashMap;
+ import java.util.List;
++import java.util.Map;
+ 
+ @RestController
+ @RequestMapping(value = "/gps/internal")
+@@ -65,25 +66,25 @@
+     public ResultVo<Integer> judgeTerminalInArea(@RequestBody TerminalAreaDto terminalAreaDto) {
+         ResultVo<Integer> result = new ResultVo<>();
+         try {
+-            BeanValidate.checkParam(terminalAreaDto);
++            BeanValidate.checkParam(terminalAreaDto);   //进行对象数据校验
++            //获取终端点位信息
+             BaseGPSPositionDto baseGPSPositionDto = GpsMonitorSingle.getInstance().getMapLatestAvailablePosition().get(terminalAreaDto.getTerminalId());
+-            if (ObjectUtils.isEmpty(baseGPSPositionDto) || ObjectUtils.isEmpty(baseGPSPositionDto.getPoint())) {
++            if (ObjectUtils.isEmpty(baseGPSPositionDto) || ObjectUtils.isEmpty(baseGPSPositionDto.getPoint())) {    //判断该终端的设备号是否存在
+                 result.resultFail("没有该终端设备对象的点位信息,请核对设备号");
+                 result.setData(3);
+                 return result;
+             }
+-            BasicPositionDto basicPositionDto = baseGPSPositionDto.getPoint();
++            BasicPositionDto basicPositionDto = baseGPSPositionDto.getPoint();  //获取终端点位数据
++            //判断该终端设备是否在线 true：掉线   false：不掉线
+             boolean dateFlag = DateTimeUtils.durationMinutes(basicPositionDto.getDate(), DateTimeUtils.getCurrentLocalDateTime()) > outLineTime;
+             if (dateFlag) {
+                 result.resultFail("该终端设备已掉线");
+                 result.setData(0);
+                 return result;
+             }
+-            //判断该终端是否在对应区域内
+-            InAreaDto inArea = terminalAreaDto.getArea();
+-            AreaDto area = iGenerator.convert(inArea, AreaDto.class);
+-            boolean isInAreaFlag = GPSPositionUtil.checkSingleInArea(new Point2D.Double(basicPositionDto.getLongitude(), basicPositionDto.getLatitude()), area);
+-            if (!isInAreaFlag) {
++
++
++            if (!getIsInAreaFlag(terminalAreaDto,basicPositionDto)) {
+                 result.resultFail("该终端设备在线但不在指定区域");
+                 result.setData(1);
+                 return result;
+@@ -102,6 +103,65 @@
+     }
+ 
+ 
++    @PostMapping("judgeTerminalInAreaList")
++    @ApiOperation(value = "判断多个终端是否在区域内接口", notes = "判断多个终端是否在区域内接口api")
++    public ResultVo<Map<Integer,List<String>>> judgeTerminalInAreaList(@RequestBody TerminalAreaDto terminalAreaDto) {
++        ResultVo<Map<Integer,List<String>>> result = new ResultVo<>();
++        Map<Integer,List<String>> terminalAreaVerificationDtoMap=new HashMap<>();  //要返回的数据
++        List<String> ZeroTerminalAreaVerificationDtoList=new ArrayList<>();   //保存状态为0的终端  掉线设备
++        List<String> OneTerminalAreaVerificationDtoList=new ArrayList<>();   //保存状态为1的终端   不在区域内的设备
++        List<String> TwoTerminalAreaVerificationDtoList=new ArrayList<>();   //保存状态为2的终端   在线且再区域内的设备
++        List<String> ThreeTerminalAreaVerificationDtoList=new ArrayList<>();   //保存状态为3的终端 终端设备号不存在 的
++        try {
++            BeanValidate.checkParam(terminalAreaDto);   //进行对象数据校验
++            String[] terminalIds = terminalAreaDto.getTerminalId().split(",");//获取到所有的终端设备编号
++            for (String terminalId : terminalIds) {
++                //获取终端点位信息
++                BaseGPSPositionDto baseGPSPositionDto = GpsMonitorSingle.getInstance().getMapLatestAvailablePosition().get(terminalId);
++                if (ObjectUtils.isEmpty(baseGPSPositionDto) || ObjectUtils.isEmpty(baseGPSPositionDto.getPoint())) {    //判断该终端的设备号是否存在
++
++                    ThreeTerminalAreaVerificationDtoList.add(terminalId);
++                    continue;
++                }
++
++                BasicPositionDto basicPositionDto = baseGPSPositionDto.getPoint();  //获取终端点位数据
++                //判断终端设备是否在线 true：掉线   false：不掉线
++                boolean dateFlag = DateTimeUtils.durationMinutes(basicPositionDto.getDate(), DateTimeUtils.getCurrentLocalDateTime()) > outLineTime;
++//                System.out.println(DateTimeUtils.durationMinutes(basicPositionDto.getDate(), DateTimeUtils.getCurrentLocalDateTime())+"%%%%%%%%%%%@#$@#$0");
++                if (dateFlag) {
++
++                    ZeroTerminalAreaVerificationDtoList.add(terminalId);
++                    continue;
++                }
++                //判断终端设备是否在区域内
++                if (!getIsInAreaFlag(terminalAreaDto,basicPositionDto)) {
++
++                    OneTerminalAreaVerificationDtoList.add(terminalId);
++                    continue;
++                }
++
++                TwoTerminalAreaVerificationDtoList.add(terminalId);
++
++            }
++            terminalAreaVerificationDtoMap.put(0,ZeroTerminalAreaVerificationDtoList);
++            terminalAreaVerificationDtoMap.put(1,OneTerminalAreaVerificationDtoList);
++            terminalAreaVerificationDtoMap.put(2,TwoTerminalAreaVerificationDtoList);
++            terminalAreaVerificationDtoMap.put(3,ThreeTerminalAreaVerificationDtoList);
++            result.setData(terminalAreaVerificationDtoMap);
++            return result;
++        } catch (ParamException px) {
++            result.resultFail("系统异常:" + px.getMessage());
++            logger.error("GpsInternalController.judgeTerminalInArea is error", px);
++        } catch (Exception e) {
++            logger.error("GpsInternalController.judgeTerminalInArea is error", e);
++            result.resultFail("系统异常:验证设备是否在区域内失败");
++        }
++
++        return result;
++    }
++
++
++
+     @PostMapping("getAllCarsInArea")
+     @ApiOperation(value = "获取区域内所有车辆接口", notes = "获取区域内所有车辆接口api")
+     public ResultVo<List<String>> getAllCarsInArea(@RequestBody InAreaDto areaDto) {
+@@ -153,4 +213,11 @@
+         return false;
+     }
+ 
++    public boolean getIsInAreaFlag(@RequestBody TerminalAreaDto terminalAreaDto,BasicPositionDto basicPositionDto){
++        InAreaDto inArea = terminalAreaDto.getArea();
++        AreaDto area = iGenerator.convert(inArea, AreaDto.class);
++        // //判断该终端是否在对应区域内 true：在区域内  false：不在区域内
++        boolean isInAreaFlag = GPSPositionUtil.checkSingleInArea(new Point2D.Double(basicPositionDto.getLongitude(), basicPositionDto.getLatitude()), area);
++        return isInAreaFlag;
++    }
+ }

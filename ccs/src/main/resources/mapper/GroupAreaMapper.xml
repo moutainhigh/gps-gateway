@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zkkj.gps.gateway.ccs.mappper.GroupAreaMapper">
+
+
+    <!-- 区域-->
+    <insert id="addGroupAreaInfo" useGeneratedKeys="true" keyProperty="id" keyColumn="id"
+            parameterType="com.zkkj.gps.gateway.ccs.dto.area.AreaEntity">
+        <selectKey resultType="java.lang.String" keyProperty="id" order="BEFORE">
+            select uuid()
+        </selectKey>
+        INSERT INTO org_area
+        (id,app_key,identity,graph_type,center_lat,center_lng,radius,area_name,description,area_points,area_type,center_address,create_user,create_time)
+        VALUES
+        (#{id},#{appKey},#{identity},#{graphType},#{centerLat},#{centerLng},#{radius},#{areaName},#{description},#{areaPoints},#{areaType},
+        #{centerAddress},#{createUser},NOW())
+    </insert>
+
+
+    <!--修改区域信息-->
+    <update id="updateGroupArea" parameterType="com.zkkj.gps.gateway.ccs.dto.area.GroupAreaUpdateDto">
+		UPDATE  org_area SET area_name = #{areaName}, description=#{description},area_type=#{areaType},
+        graph_type=#{graphType},
+        center_lat=#{centerLat},
+        center_lng=#{centerLng},
+        radius=#{radius},
+        center_address=#{centerAddress},
+        area_points=#{areaPoints},
+		update_time = NOW(), update_user = #{createUser}  WHERE id = #{id}
+	</update>
+
+    <!--删除区域信息-->
+    <update id="deleteGroupArea" parameterType="java.lang.String">
+		UPDATE  org_area SET `is_deleted` = 1 ,
+		update_time = NOW(), update_user = #{updateUser}  WHERE id = #{id} AND is_deleted = 0
+	</update>
+
+
+    <select id="getGroupAreaListInfo" resultType="com.zkkj.gps.gateway.ccs.dto.area.GroupAreaEntity">
+        SELECT a.id,a.identity as identity, a.graph_type as graphType,a.area_name as areaName,a.description,a.center_lat
+        as centerLat,
+        a.center_lng as centerLng,a.radius,a.center_address as centerAddress,a.area_points as areaPoints,
+        a.area_type as areaType ,a.create_user AS createUser from org_area as a
+        where a.app_key=#{appkey} and a.is_deleted=0
+        <if test="identity != null and identity!=''">
+            and a.identity=#{identity}
+        </if>
+        <if test="keyWords != null and keyWords!=''">
+            and (a.identity LIKE "%"#{keyWords}"%" or a.area_name LIKE "%"#{keyWords}"%")
+        </if>
+        order by a.create_time desc
+    </select>
+
+    <select id="getGroupAreaDetailInfoById" resultType="com.zkkj.gps.gateway.ccs.dto.area.GroupAreaDetailInfo">
+        SELECT a.id,a.graph_type as graphType,a.area_name as areaName,a.description,a.center_lat as centerLat,a.center_lng as centerLng,
+        a.radius as radius,a.area_points as areaPoints,a.center_address as centerAddress,
+        a.area_type as areaType from org_area as a
+        where a.id=#{id}
+    </select>
+
+
+    <select id="getGroupAreaInfoByGroupIdAndAreaName" resultType="com.zkkj.gps.gateway.ccs.dto.area.GroupAreaEntity">
+        SELECT a.id,a.graph_type as graphType,a.area_name as areaName,a.description,a.center_lat as centerLat,
+        a.center_lng as centerLng,a.radius,a.center_address as centerAddress,
+        a.area_type as areaType from org_area as a
+        where a.app_key=#{appkey} and a.identity=#{identity} and a.area_name=#{areaName} and a.is_deleted=0
+    </select>
+
+
+</mapper>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zkkj.gps.gateway.ccs.mappper.DispatchMapper">
+
+    <!-- 新增派单-->
+    <insert id="addDispatchInfo" useGeneratedKeys="true" keyProperty="id" keyColumn="id"
+            parameterType="com.zkkj.gps.gateway.ccs.dto.dispatch.DispatchAddDto">
+        <selectKey resultType="java.lang.String" keyProperty="id" order="BEFORE">
+            select uuid()
+        </selectKey>
+        insert into
+        dispatch(id,appkey,`identity`,car_number,terminal_id,status,consigner_area,receiver_area,receiver_corp_name,
+        consigner_corp_name,shipper_corp_name,dispatch_no,driver_name,driver_mobile,product_name,create_time,create_by,create_by_name,
+        consigner_area_id,receiver_area_id,dispatch_type
+        )VALUES
+        (#{id},#{appkey},#{identity},#{carNumber},#{terminalNo},#{status},#{consignerAreaName},#{receiverAreaName},#{receiverCorpName},#{consignerCorpName},
+        #{shipperCorpName},#{dispatchNo},#{driverName},#{driverMobile},#{productName},NOW(),#{createByName},#{createByUserName},
+        #{consignerAreaId},#{receiverAreaId},#{dispatchType})
+    </insert>
+
+    <update id="updateDispatchInfo" parameterType="com.zkkj.gps.gateway.ccs.dto.dispatch.DispatchUpdateDto">
+        UPDATE dispatch
+        set
+        <if test="status != null and status !=''">
+            status = #{status},
+        </if>
+        <if test="terminalNo !=null and terminalNo != ''">
+            terminal_id = #{terminalNo},
+        </if>
+        <if test="remake != null and remake!=''">
+            remake=#{remake},
+        </if>
+        update_time = NOW()
+        WHERE dispatch_no = #{dispatchNo}
+        AND status <![CDATA[< ]]>270
+    </update>
+
+
+    <select id="getDispatchCacheListInfo" resultType="com.zkkj.gps.gateway.ccs.dto.dispatch.DispatchAddDto">
+        SELECT id,appkey,`identity`,car_number as carNumber,terminal_id as terminalNo,status,consigner_area as consignerAreaName,
+        receiver_area as receiverAreaName,receiver_corp_name as receiverCorpName,consigner_corp_name as consignerCorpName,
+        shipper_corp_name as shipperCorpName,dispatch_no as dispatchNo,driver_name as driverName,driver_mobile as driverMobile,
+        create_time as createTime,product_name as productName,consigner_area_id as consignerAreaId,receiver_area_id as receiverAreaId,
+        dispatch_type as dispatchType
+        from dispatch
+        where  status<![CDATA[< ]]>260
+    </select>
+
+
+    <select id="getDispatchByTerminalId" resultType="com.zkkj.gps.gateway.ccs.dto.dispatch.DispatchAddDto">
+        SELECT id,appkey,`identity`,car_number as carNumber,terminal_id as terminalNo,status,consigner_area as consignerAreaName,
+        receiver_area as receiverAreaName,receiver_corp_name as receiverCorpName,consigner_corp_name as consignerCorpName,
+        shipper_corp_name as shipperCorpName,dispatch_no as dispatchNo,driver_name as driverName,driver_mobile as driverMobile,
+        create_time as createTime,product_name as productName,consigner_area_id as consignerAreaId,receiver_area_id as receiverAreaId
+        from dispatch
+        where  status<![CDATA[< ]]>260 and terminal_id=#{terminalId}
+    </select>
+
+    <select id="getDispatchInfo" resultType="com.zkkj.gps.gateway.ccs.dto.dispatch.DispatchAddDto" parameterType="com.zkkj.gps.gateway.ccs.dto.dispatch.BaseUpdateDispatchInfoDto">
+        SELECT id,appkey,`identity`,car_number as carNumber,terminal_id as terminalNo,status,consigner_area as consignerAreaName,
+        receiver_area as receiverAreaName,receiver_corp_name as receiverCorpName,consigner_corp_name as consignerCorpName,
+        shipper_corp_name as shipperCorpName,dispatch_no as dispatchNo,driver_name as driverName,driver_mobile as driverMobile,
+        create_time as createTime,product_name as productName,consigner_area_id as consignerAreaId,receiver_area_id as receiverAreaId
+        from dispatch
+        <where>
+            <if test="terminalNo !=null and terminalNo != ''">
+                AND terminal_id = #{terminalNo}
+            </if>
+            <if test="dispatchNo !=null and dispatchNo != ''">
+                AND dispatch_no = #{dispatchNo}
+            </if>
+        </where>
+    </select>
+
+    <update id="updateMonitorAffiliation" parameterType="com.zkkj.gps.gateway.ccs.dto.dispatch.UpdateDispatchIdentityInfoDto">
+        UPDATE dispatch
+        set
+        <if test="identity != null and identity !=''">
+            `identity` = #{identity},
+        </if>
+        <if test="updateBy !=null and updateBy != ''">
+            update_by = #{updateBy},
+        </if>
+        update_time = NOW()
+        WHERE dispatch_no = #{dispatchNo} AND terminal_id = #{terminalNo}
+    </update>
+
+</mapper>

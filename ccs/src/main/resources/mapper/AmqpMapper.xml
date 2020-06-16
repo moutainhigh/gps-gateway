@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zkkj.gps.gateway.ccs.mappper.AmqpMapper">
+
+    <!-- 新增消息用户-->
+    <insert id="addAmqpUser" parameterType="com.zkkj.gps.gateway.ccs.dto.amqp.AmqpVerifyDto">
+        INSERT INTO amqpcache
+        (app_key,app_secret,third_party_url)
+        VALUES
+        (#{appKey},#{appSecret},#{thirdPartyUrl})
+    </insert>
+
+    <!--查询消息用户-->
+    <select id="getAmqpUser" resultType="com.zkkj.gps.gateway.ccs.dto.amqp.AmqpVerifyDto">
+        SELECT app_key AS appKey,app_secret AS appSecret,third_party_url AS thirdPartyUrl
+        FROM amqpcache
+    </select>
+
+    <!--更新消息用户-->
+    <update id="updateAmqpUser" parameterType="com.zkkj.gps.gateway.ccs.dto.amqp.AmqpVerifyDto">
+        UPDATE amqpcache
+        SET
+        app_key = #{appKey},
+        app_secret = #{appSecret},
+        third_party_url = #{thirdPartyUrl}
+        WHERE
+        app_key = #{appKey}
+    </update>
+
+</mapper>

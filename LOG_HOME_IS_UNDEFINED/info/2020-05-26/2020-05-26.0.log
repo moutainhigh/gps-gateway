@@ -1,0 +1,2 @@
+2020-05-26 16:15:08.957 [main] INFO  com.zkkj.gps.gateway.ccs.CCSMain - Starting CCSMain on DESKTOP-AJP6VIR with PID 14596 (D:\workspace\gps-gateway\ccs\target\classes started by admin in D:\workspace\gps-gateway)
+2020-05-26 16:15:08.963 [main] INFO  com.zkkj.gps.gateway.ccs.CCSMain - The following profiles are active: @package.environment@

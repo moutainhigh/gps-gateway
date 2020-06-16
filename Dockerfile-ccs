@@ -1,0 +1,5 @@
+FROM java:8
+USER root
+ADD ccs/target/ccs-*.jar /opt/gps-gateway/
+ENV JAVA_OPTS=""
+ENTRYPOINT [ "sh", "-c", "java -Dfile.encoding=UTF8 -Duser.timezone=GMT+08 $JAVA_OPTS -jar /opt/gps-gateway/ccs-*.jar" ]

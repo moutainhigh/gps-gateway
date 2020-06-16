@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zkkj.gps.gateway.automation.mapper.TerminalMapper">
+    <select id="getTerminalListFromLast" resultType="java.lang.String">
+        SELECT terminal_id AS terminalId FROM vehicle_location_last WHERE data_sources = 1;
+    </select>
+
+    <insert id="insertTerminal" parameterType="java.util.List">
+        INSERT INTO terminal_options (terminal_id)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.terminalId})
+        </foreach>
+    </insert>
+
+    <select id="getTerminalList" resultType="java.lang.String">
+        SELECT terminal_id AS terminalId FROM terminal_options;
+    </select>
+    <select id="getTerminalObjList"
+            resultType="com.zkkj.gps.gateway.automation.entity.terminal.TerminalStatus">
+        SELECT terminal_id AS terminalId ,options_suc AS optionsSuc FROM terminal_options;
+    </select>
+
+    <update id="updateTerminalData" parameterType="string">
+      UPDATE terminal_options SET options_suc = 1 WHERE terminal_id = #{terminalId};
+    </update>
+
+</mapper>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zkkj.gps.gateway.ccs.mappper.GroupRouteMapper">
+
+    <!-- 新增线路-->
+    <insert id="addGroupRouteInfo" useGeneratedKeys="true" keyProperty="id" keyColumn="id"
+            parameterType="com.zkkj.gps.gateway.ccs.dto.route.RouteEntity">
+        <selectKey resultType="java.lang.String" keyProperty="id" order="BEFORE">
+            select uuid()
+        </selectKey>
+        INSERT INTO org_route
+        (id,app_key,identity,route_name,route_width,mileage,route_color,point_sequence,duration,strategy,scale_baidu,remark,create_user,create_time)
+        VALUES
+        (#{id},#{appKey},#{identity},#{routeName},#{routeWidth},#{mileage},#{routeColor},#{pointSequence},#{duration},#{strategy},#{scaleBaidu},#{remark},#{createUser},NOW())
+    </insert>
+
+
+    <!--修改线路信息-->
+    <update id="updateGroupRoute" parameterType="com.zkkj.gps.gateway.ccs.dto.route.GroupRouteUpdateDto">
+		UPDATE  org_route SET route_name = #{routeName}, route_width=#{routeWidth},mileage=#{mileage},route_color=#{routeColor},
+		point_sequence = #{pointSequence},
+		remark = #{remark},
+		update_time = NOW(), update_user = #{createUser}  WHERE id = #{id}
+	</update>
+
+    <!--删除区域信息-->
+    <update id="deleteGroupRoute" parameterType="java.lang.String">
+		UPDATE  org_route SET `is_deleted` = 1 ,
+		update_time = NOW(), update_user = #{updateUser}  WHERE id = #{id} AND is_deleted=0
+	</update>
+
+
+    <select id="getGroupRouteListInfo" resultType="com.zkkj.gps.gateway.ccs.dto.route.GroupRouteEntity">
+        SELECT a.id,a.identity as identity,a.route_width as routeWidth,a.route_name as routeName,a.mileage,a.point_sequence as pointSequence,
+        a.route_color as routeColor,a.duration as duration,a.create_user AS createUser,a.remark from org_route as a
+        where a.app_key=#{appkey} and a.is_deleted=0
+        <if test="identity != null and identity!=''">
+            and a.identity=#{identity}
+        </if>
+        <if test="keyWords != null and keyWords!=''">
+            and (a.identity LIKE "%"#{keyWords}"%" or a.route_name LIKE "%"#{keyWords}"%")
+        </if>
+        order by a.create_time desc
+    </select>
+
+    <select id="getGroupRouteDetailInfo" resultType="com.zkkj.gps.gateway.ccs.dto.route.GroupRouteDetailInfo">
+        SELECT a.id,a.route_name as routeName,a.route_width as routeWidth,a.mileage,a.route_color as routeColor,a.point_sequence as pointSequence,
+        a.duration as duration,a.strategy as strategy,
+        a.scale_baidu as scaleBaidu,a.remark as remark from org_route as a
+        where a.id=#{id}
+    </select>
+
+
+    <select id="getGroupInfoByGroupIdAndRouteName" resultType="com.zkkj.gps.gateway.ccs.dto.route.GroupRouteEntity">
+        SELECT a.id,a.route_width as routeWidth,a.route_name as routeName,a.mileage,
+        a.route_color as routeColor,a.duration as duration,a.remark from org_route as a
+        where a.app_key=#{appkey} AND a.identity=#{identity} and a.route_name=#{routeName} and a.is_deleted=0
+
+    </select>
+
+
+
+</mapper>

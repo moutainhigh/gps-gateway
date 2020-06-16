@@ -1,0 +1,47 @@
+stages:
+    - test
+    - notice_faile
+    - notice_success
+deploy_commit_job:
+  # Use stage test here, so the pages job may later pickup the created site.
+  stage: test
+  script:
+    #- 'mvn compile -X'
+    - 'mvn test'
+  only:
+    - master
+  # Archive up the built documentation site.
+  artifacts:
+    paths:
+    - target/staging 
+  tags:
+    - java
+  before_script: 
+    #- rm -rf /root/.m2/settings.xml
+    #- echo -e "<?xml version=\""1.0\"" encoding=\""UTF-8\""?><settings xmlns=\""http://maven.apache.org/SETTINGS/1.0.0\"" xmlns:xsi=\""http://www.w3.org/2001/XMLSchema-instance\"" xsi:schemaLocation=\""http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd\""><mirrors><mirror><id>alimaven</id><name>aliyun maven</name><url>http://maven.aliyun.com/nexus/content/groups/public/</url><mirrorOf>central</mirrorOf></mirror></mirrors></settings>" > /root/.m2/settings.xml
+    #- apt-get update
+    #- apt install iputils-ping
+  after_script:
+    - mvn clean install #sonar:sonar   -Dsonar.projectKey=gps-gateway   -Dsonar.host.url=http://192.168.3.252:9000   -Dsonar.login=1ddf775f14d8c17d2fae597681b7921f44bd008e
+    # - cd /root/.m2/repository/org/springframework/boot/spring-boot-starter-parent/2.0.4.RELEASE/
+    # - ls -a 
+notice_faile:
+    stage: notice_faile
+    variables:
+      branch_url: $CI_PROJECT_URL/tree/$CI_COMMIT_REF_NAME
+      commit_url: $CI_PROJECT_URL/commit/$CI_COMMIT_SHA
+    script:
+       - python notice.py $CI_PROJECT_URL $CI_PROJECT_NAME $commit_url '测试失败'
+    when: on_failure
+    tags:
+    - java
+notice_success:
+    stage: notice_success
+    variables:
+      branch_url: $CI_PROJECT_URL/tree/$CI_COMMIT_REF_NAME
+      commit_url: $CI_PROJECT_URL/commit/$CI_COMMIT_SHA
+    script:
+       - python3 notice.py $CI_PROJECT_URL $CI_PROJECT_NAME $commit_url '测试成功'
+    when: on_success
+    tags:
+    - java
